@@ -7,6 +7,9 @@ package frc.robot.commands;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+
+import java.lang.ModuleLayer.Controller;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -32,8 +35,10 @@ public class Drive extends Command {
 	SlewRateLimiter yLimiter = new SlewRateLimiter(20);
 	SlewRateLimiter rotLimiter = new SlewRateLimiter(Units.rotationsToRadians(3));
 
-	double multiplier;
-	
+	double rotMulti;
+	double driveMulti;
+
+
 		/** Creates a new Drive. */
 		public Drive(SwerveChassis chassis, CommandXboxController controller) {
 			// Use addRequirements() here to declare subsystem dependencies.
@@ -53,20 +58,27 @@ public class Drive extends Command {
 			}
 		}
 
-		// public void multi(){
-		// 	if (control.getAButtonPressed()){
-		// 		multiplier = 0.2;
-		// 	} else{
-		// 		multiplier = 1.0;
-		// 	}
-		// }
 	
 		// Called every time the scheduler runs while the command is scheduled.
 		@Override
 		public void execute() {
-		double xInput = MathUtil.applyDeadband(controller.getLeftY(), 0.1) * Constants.SwerveModuleConstants.kMaxSpeed;
-		double yInput = MathUtil.applyDeadband(controller.getLeftX(), 0.1) * Constants.SwerveModuleConstants.kMaxSpeed ;
-		double rotInput = MathUtil.applyDeadband(controller.getRightX(), 0.1)
+
+		if (controller.getHID().getLeftBumperButton() == true){
+			driveMulti = .4;
+			rotMulti = .2;
+		} else{
+			driveMulti = 1;
+			rotMulti = 1;
+		}
+
+		double xInput = controller.getLeftY() * driveMulti;
+		double yInput = controller.getLeftX() * driveMulti;
+		double rotInput = controller.getRightX() * rotMulti;
+
+		
+		double xInputTrans = MathUtil.applyDeadband(xInput, 0.1) * Constants.SwerveModuleConstants.kMaxSpeed;
+		double yInputTrans = MathUtil.applyDeadband(yInput, 0.1) * Constants.SwerveModuleConstants.kMaxSpeed ;
+		double rotInputTrans = MathUtil.applyDeadband(rotInput, 0.1)
 				* Constants.SwerveModuleConstants.KMaxAngularSpeed;
 
 		// SmartDashboard.putNumber("Sticks/X", xInput);
@@ -74,17 +86,17 @@ public class Drive extends Command {
 		// SmartDashboard.putNumber("Sticks/R", rotInput);
 
 		if (controller.getHID().getRightBumper()) {
-			xInput = xLimiter.calculate(xInput);
-			yInput = yLimiter.calculate(yInput);
-			rotInput = rotLimiter.calculate(rotInput);
+			xInputTrans = xLimiter.calculate(xInputTrans);
+			yInputTrans = yLimiter.calculate(yInputTrans);
+			rotInputTrans = rotLimiter.calculate(rotInputTrans);
 
-			chassis.driveRobotRelative(new ChassisSpeeds(xInput, yInput, rotInput));
+			chassis.driveRobotRelative(new ChassisSpeeds(xInputTrans, yInputTrans, rotInputTrans));
 		} else {
-			xInput = xLimiter.calculate(xInput * alliance);
-			yInput = yLimiter.calculate(yInput * alliance);
-			rotInput = rotLimiter.calculate(rotInput);
+			xInputTrans = xLimiter.calculate(xInputTrans * alliance);
+			yInputTrans = yLimiter.calculate(yInputTrans * alliance);
+			rotInputTrans = rotLimiter.calculate(rotInputTrans);
 
-			chassis.driveFieldRelative(new ChassisSpeeds(xInput, yInput, rotInput));
+			chassis.driveFieldRelative(new ChassisSpeeds(xInputTrans, yInputTrans, rotInputTrans));
 		}
 		
 	}
