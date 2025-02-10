@@ -316,13 +316,13 @@ public class LimelightHelpers {
 
         @JsonProperty("botpose_tagcount")
         public double botpose_tagcount;
-        
+       
         @JsonProperty("botpose_span")
         public double botpose_span;
-        
+       
         @JsonProperty("botpose_avgdist")
         public double botpose_avgdist;
-        
+       
         @JsonProperty("botpose_avgarea")
         public double botpose_avgarea;
 
