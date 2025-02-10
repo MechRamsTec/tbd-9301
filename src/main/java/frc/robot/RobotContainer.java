@@ -1,62 +1,99 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.subsystems.Swerve;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.Drive;
+// import frc.robot.subsystems.Intake;
+// import frc.robot.subsystems.LiftingArm;
+import frc.robot.subsystems.SwerveChassis;
+// import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Climber;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
- */
 public class RobotContainer {
-  public final Joystick driver;
 
-  public final Swerve swerve;
+	SwerveChassis chassis = new SwerveChassis();
+	Climber climber = new Climber();
+	// LiftingArm liftingArm = new LiftingArm();
+	// Intake intake = new Intake();
+	// Shooter shooter = new Shooter();
+	
 
-  private final SendableChooser<Command> autoChooser;
+	CommandXboxController driverController = new CommandXboxController(0);
+	CommandXboxController operatorController = new CommandXboxController(1);
 
-  public RobotContainer() {
-    driver = new Joystick(Constants.kControls.DRIVE_JOYSTICK_ID);
 
-    swerve = new Swerve();
+	private final SendableChooser<Command> autoChooser;
 
-    autoChooser = AutoBuilder.buildAutoChooser();
+	public RobotContainer() {
+		// NamedCommands.registerCommand("Intake", Commands.parallel(
+		// 		liftingArm.setAngle(Constants.LiftingArmConstants.OpenAngle),
+		// 		intake.setVoltage(Constants.IntakeConstants.GrabVolts)
+		// 	).withTimeout(3.5));
+
+		// NamedCommands.registerCommand("Close Intake", Commands.parallel(
+		// 		liftingArm.setAngle(Constants.LiftingArmConstants.ClosedAngle),
+		// 		intake.setVoltage(Constants.IntakeConstants.StopVolts)
+		// 	));
+
+		// NamedCommands.registerCommand("Shoot", Commands.sequence(
+		// 	shooter.setVelocity(Constants.ShooterConstants.ShootVelocity),
+		// 	intake.setVoltage(Constants.IntakeConstants.TrowVolts),
+		// 	Commands.waitSeconds(0.5),
+		// 	Commands.parallel(
+		// 		shooter.setVelocity((Constants.ShooterConstants.StopVelocity)),
+		// 		intake.setVoltage(Constants.IntakeConstants.StopVolts)
+		// 	)
+		// ));
+
+
+		autoChooser = AutoBuilder.buildAutoChooser();
 
 		SmartDashboard.putData(autoChooser);
 
-    // Configure button bindings
-    configureButtonBindings();
-  }
+		configureBindings();
+	}
 
-  /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
-  private void configureButtonBindings() {
-    swerve.setDefaultCommand(swerve.drive(
-      () -> -Constants.kControls.X_DRIVE_LIMITER.calculate(driver.getRawAxis(Constants.kControls.TRANSLATION_Y_AXIS)),
-      () -> -Constants.kControls.Y_DRIVE_LIMITER.calculate(driver.getRawAxis(Constants.kControls.TRANSLATION_X_AXIS)), 
-      () -> -Constants.kControls.THETA_DRIVE_LIMITER.calculate(driver.getRawAxis(Constants.kControls.ROTATION_AXIS)),
-      true,
-      false
-    ));
+	private void configureBindings() {
+		chassis.setDefaultCommand(new Drive(chassis, driverController));
 
-    new JoystickButton(driver, Constants.kControls.GYRO_RESET_BUTTON)
-      .onTrue(swerve.zeroGyroCommand());
-  }
+		// operatorController.rightTrigger().whileTrue(shooter.setVelocity(Constants.ShooterConstants.ShootVelocity));
+		// operatorController.rightTrigger().onFalse(shooter.setVelocity(Constants.ShooterConstants.StopVelocity));
 
-  public Command getAutonomousCommand() {
+		operatorController.y().onTrue(climber.setVoltage(Constants.LiftingArmConstants.ExtendVolts));
+		operatorController.y().onFalse(climber.setVoltage(Constants.LiftingArmConstants.StopVolts));
+
+		operatorController.a().onTrue(climber.setVoltage(Constants.LiftingArmConstants.RetractVolts));
+		operatorController.a().onFalse(climber.setVoltage(Constants.LiftingArmConstants.StopVolts));
+
+
+		// operatorController.b().whileTrue(liftingArm.setAngle(Constants.LiftingArmConstants.OpenAngle).alongWith((intake.setVoltage(Constants.IntakeConstants.GrabVolts))));
+		// operatorController.b().onFalse(liftingArm.setAngle(Constants.LiftingArmConstants.ClosedAngle).beforeStarting((intake.setVoltage(Constants.IntakeConstants.StopVolts))));
+
+		// driverController.rightBumper().onTrue(intake.setVoltage(Constants.IntakeConstants.GrabVolts));
+		// driverController.rightBumper().onFalse(intake.setVoltage(Constants.IntakeConstants.StopVolts));
+
+		// driverController.leftBumper().onTrue(intake.setVoltage(Constants.IntakeConstants.TrowVolts));
+		// driverController.leftBumper().onFalse(intake.setVoltage(Constants.IntakeConstants.StopVolts));
+
+		driverController.start().onTrue(
+			Commands.either(
+				chassis.resetHeading(180), chassis.resetHeading(0), () -> DriverStation.getAlliance().get() == DriverStation.Alliance.Red)
+		);
+
+	}
+
+	public Command getAutonomousCommand() {
 		return autoChooser.getSelected();
 	}
 }
